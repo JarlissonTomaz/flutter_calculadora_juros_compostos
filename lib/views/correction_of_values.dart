@@ -6,7 +6,7 @@ class SelicCalculator extends StatefulWidget {
   const SelicCalculator({super.key});
 
   @override
-  _SelicCalculatorState createState() => _SelicCalculatorState();
+  State<SelicCalculator> createState() => _SelicCalculatorState();
 }
 
 class _SelicCalculatorState extends State<SelicCalculator> {

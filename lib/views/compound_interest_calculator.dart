@@ -7,7 +7,7 @@ class CalculadoraJC extends StatefulWidget {
   const CalculadoraJC({super.key});
 
   @override
-  _CalculadoraJCState createState() => _CalculadoraJCState();
+  State<CalculadoraJC> createState() => _CalculadoraJCState();
 }
 
 class _CalculadoraJCState extends State<CalculadoraJC> {

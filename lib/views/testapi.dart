@@ -1,42 +1,40 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http; // Importar o pacote http
+import 'package:http/http.dart' as http;
 
 class DatePickerExample extends StatefulWidget {
+  const DatePickerExample({super.key});
+
   @override
-  _DatePickerExampleState createState() => _DatePickerExampleState();
+  State<DatePickerExample> createState() => _DatePickerExampleState();
 }
 
 class _DatePickerExampleState extends State<DatePickerExample> {
-  DateTime? _selectedDate; // Data selecionada no DatePicker
-  String? _valor; // Valor correspondente à data selecionada
-  List<Map<String, dynamic>> _dados = []; // Lista de dados carregados
+  DateTime? _dataInicial;
+  DateTime? _dataFinal;
+  double? _valorFinal;
+  List<Map<String, dynamic>> _dados = [];
+  final TextEditingController _valorInicialController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    carregarDados(); // Carregar os dados ao iniciar o app
+    carregarDados();
   }
 
-  // Carregar os dados da API (ao invés de um arquivo local)
   Future<void> carregarDados() async {
-    // Substitua pela URL da sua API
-    final url = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=json'; 
+    final url = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=json';
 
     try {
-      // Fazendo a requisição HTTP
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        // Se a requisição for bem-sucedida, parse os dados JSON
         final List<dynamic> dados = json.decode(response.body);
 
         setState(() {
           _dados = dados.cast<Map<String, dynamic>>();
         });
       } else {
-        // Em caso de erro na requisição
         throw Exception('Falha ao carregar dados');
       }
     } catch (e) {
@@ -44,34 +42,58 @@ class _DatePickerExampleState extends State<DatePickerExample> {
     }
   }
 
-  // Método para buscar o valor correspondente à data
+  double calcularValorFinal(
+      double valorInicial, DateTime dataInicial, DateTime dataFinal) {
+    int dias = dataFinal.difference(dataInicial).inDays; // Dias entre as datas
+    double valorFinal = valorInicial;
+
+    for (int i = 0; i <= dias; i++) {
+      final dataAtual = dataInicial.add(Duration(days: i));
+      final dataFormatada =
+          "${dataAtual.day.toString().padLeft(2, '0')}/${dataAtual.month.toString().padLeft(2, '0')}/${dataAtual.year}";
+
+      // Buscar a taxa para a data atual
+      final taxaDiaria = (double.tryParse(buscarValor(dataFormatada) ?? '0') ?? 0) / 100;
+
+      // Aplicar juros compostos
+      valorFinal *= (1 + taxaDiaria);
+    }
+
+    return valorFinal;
+  }
+
   String? buscarValor(String dataFormatada) {
     final item = _dados.firstWhere(
       (item) => item['data'] == dataFormatada,
-      
+      orElse: () => {},
     );
-    return item?['valor'];
+    return item['valor'];
   }
 
-  // Exibir o DatePicker
-  Future<void> _selecionarData(BuildContext context) async {
+  Future<void> _selecionarData(BuildContext context, bool isInicial) async {
     final dataEscolhida = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(1980),
+      firstDate: DateTime(1987),
       lastDate: DateTime.now(),
     );
 
     if (dataEscolhida != null) {
       setState(() {
-        _selectedDate = dataEscolhida;
+        if (isInicial) {
+          _dataInicial = dataEscolhida;
+        } else {
+          _dataFinal = dataEscolhida;
+        }
 
-        // Formatar a data no formato "DD/MM/AAAA" para correspondência
-        final dataFormatada =
-            "${dataEscolhida.day.toString().padLeft(2, '0')}/${dataEscolhida.month.toString().padLeft(2, '0')}/${dataEscolhida.year}";
+        if (_dataInicial != null &&
+            _dataFinal != null &&
+            _valorInicialController.text.isNotEmpty) {
+          final valorInicial = double.tryParse(_valorInicialController.text) ?? 0.0;
 
-        // Buscar o valor correspondente
-        _valor = buscarValor(dataFormatada);
+          // Calcular o valor final corrigido
+          _valorFinal = calcularValorFinal(valorInicial, _dataInicial!, _dataFinal!);
+        }
       });
     }
   }
@@ -80,28 +102,41 @@ class _DatePickerExampleState extends State<DatePickerExample> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Buscar Valor por Data'),
+        title: Text('Correção de Valores'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              _selectedDate == null
-                  ? 'Nenhuma data selecionada'
-                  : 'Data selecionada: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+            TextField(
+              controller: _valorInicialController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Valor Inicial',
+                border: OutlineInputBorder(),
+              ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => _selecionarData(context),
-              child: Text('Selecionar Data'),
+              onPressed: () => _selecionarData(context, true),
+              child: Text(_dataInicial == null
+                  ? 'Selecionar Data Inicial'
+                  : 'Data Inicial: ${_dataInicial!.day}/${_dataInicial!.month}/${_dataInicial!.year}'),
             ),
             SizedBox(height: 20),
-            if (_valor != null)
-              Text('Valor: $_valor')
-            else if (_selectedDate != null)
-              Text('Nenhum valor encontrado para a data selecionada.'),
+            ElevatedButton(
+              onPressed: () => _selecionarData(context, false),
+              child: Text(_dataFinal == null
+                  ? 'Selecionar Data Final'
+                  : 'Data Final: ${_dataFinal!.day}/${_dataFinal!.month}/${_dataFinal!.year}'),
+            ),
+            SizedBox(height: 20),
+            if (_valorFinal != null)
+              Text(
+                'Valor Final Corrigido: R\$ ${_valorFinal!.toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
           ],
         ),
       ),
