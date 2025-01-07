@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_calculadora_impostos/views/home_app.dart';
 
-import 'package:flutter_calculadora_impostos/screen/home_app.dart';
 
 void main() {
   runApp(MyApp());
