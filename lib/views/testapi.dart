@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Para carregar o arquivo local
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http; // Importar o pacote http
 
 class DatePickerExample extends StatefulWidget {
-  const DatePickerExample({super.key});
-
   @override
   _DatePickerExampleState createState() => _DatePickerExampleState();
 }
@@ -20,22 +19,36 @@ class _DatePickerExampleState extends State<DatePickerExample> {
     carregarDados(); // Carregar os dados ao iniciar o app
   }
 
-  // Carregar os dados do arquivo local (ou poderia ser uma API)
+  // Carregar os dados da API (ao invés de um arquivo local)
   Future<void> carregarDados() async {
-    final String response =
-        await rootBundle.loadString('assets/dados.json'); // Arquivo local
-    final List<dynamic> dados = json.decode(response);
+    // Substitua pela URL da sua API
+    final url = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=json'; 
 
-    setState(() {
-      _dados = dados.cast<Map<String, dynamic>>();
-    });
+    try {
+      // Fazendo a requisição HTTP
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        // Se a requisição for bem-sucedida, parse os dados JSON
+        final List<dynamic> dados = json.decode(response.body);
+
+        setState(() {
+          _dados = dados.cast<Map<String, dynamic>>();
+        });
+      } else {
+        // Em caso de erro na requisição
+        throw Exception('Falha ao carregar dados');
+      }
+    } catch (e) {
+      print('Erro ao carregar dados: $e');
+    }
   }
 
   // Método para buscar o valor correspondente à data
   String? buscarValor(String dataFormatada) {
     final item = _dados.firstWhere(
       (item) => item['data'] == dataFormatada,
-  
+      
     );
     return item?['valor'];
   }
@@ -45,7 +58,7 @@ class _DatePickerExampleState extends State<DatePickerExample> {
     final dataEscolhida = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(1987),
+      firstDate: DateTime(1980),
       lastDate: DateTime.now(),
     );
 
