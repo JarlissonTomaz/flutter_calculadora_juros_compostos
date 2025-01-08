@@ -3,6 +3,7 @@ import 'package:flutter_calculadora_impostos/views/compound_interest_calculator.
 import 'package:flutter_calculadora_impostos/views/testapi.dart';
 import 'package:flutter_calculadora_impostos/views/testapi2.dart';
 import 'package:flutter_calculadora_impostos/views/testapi3.dart';
+import 'package:flutter_calculadora_impostos/views/testapi4.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,17 +31,22 @@ class _HomePageState extends State<HomePage> {
             MaterialButton(onPressed: (){
               Navigator.push(context, MaterialPageRoute(builder:  (context) => DatePickerExample() ))  ;
             },
-            child: Text('Correção de valores'),
+            child: Text('Correção de valores Selic'),
             ),
             MaterialButton(onPressed: (){
               Navigator.push(context, MaterialPageRoute(builder:  (context) => DatePickerExample2() ))  ;
             },
-            child: Text('Correção de valores 2'),
+            child: Text('Correção de valores IPCA'),
             ),
             MaterialButton(onPressed: (){
               Navigator.push(context, MaterialPageRoute(builder:  (context) => DatePickerExample3() ))  ;
             },
-            child: Text('Correção de valores 3'),
+            child: Text('Correção de valores IGP-M'),
+            ),
+            MaterialButton(onPressed: (){
+              Navigator.push(context, MaterialPageRoute(builder:  (context) => CalculoCDIPage() ))  ;
+            },
+            child: Text('Correção de valores CDI'),
             ),
           ],
         ),
